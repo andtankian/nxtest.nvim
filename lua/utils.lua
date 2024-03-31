@@ -15,7 +15,7 @@ Returns:
 
 ]]
 local function includesString(inputString, search)
-  return string.find(inputString, search) ~= nil
+	return string.find(inputString, search) ~= nil
 end
 
 --[[
@@ -30,11 +30,11 @@ end
 
 ]]
 local function getPathWithoutLastComponent(path)
-  return path:match("^(.*)/[^/]*$")
+	return path:match("^(.*)/[^/]*$")
 end
 
 local function getFilePath()
-  return vim.fn.expand("%:p")
+	return vim.fn.expand("%:p")
 end
 
 --[[
@@ -50,15 +50,15 @@ end
 
 --]]
 local function getProjectJsonPath(path)
-  local result = scan.scan_dir(path)
+	local result = scan.scan_dir(path)
 
-  for _, file in ipairs(result) do
-    if includesString(file, "project.json") then
-      return file
-    end
-  end
+	for _, file in ipairs(result) do
+		if includesString(file, "project.json") then
+			return file
+		end
+	end
 
-  return getProjectJsonPath(getPathWithoutLastComponent(path))
+	return getProjectJsonPath(getPathWithoutLastComponent(path))
 end
 
 --[[
@@ -73,23 +73,24 @@ end
     - string: The name of the Nx project.
 ]]
 local function getNxProjectName()
-  local filePath = getFilePath()
-  local projectJsonPath = getProjectJsonPath(getPathWithoutLastComponent(filePath))
+	local filePath = getFilePath()
+	print("filePath", filePath)
+	local projectJsonPath = getProjectJsonPath(getPathWithoutLastComponent(filePath))
 
-  local projectJsonContent
+	local projectJsonContent
 
-  local projectJsonFile = io.open(projectJsonPath, "r")
+	local projectJsonFile = io.open(projectJsonPath, "r")
 
-  if projectJsonFile == nil then
-    return
-  end
+	if projectJsonFile == nil then
+		return
+	end
 
-  projectJsonContent = projectJsonFile:read("*a")
-  projectJsonFile:close()
+	projectJsonContent = projectJsonFile:read("*a")
+	projectJsonFile:close()
 
-  local projectJson = vim.fn.json_decode(projectJsonContent)
+	local projectJson = vim.fn.json_decode(projectJsonContent)
 
-  return projectJson.name
+	return projectJson.name
 end
 
 M.getNxProjectName = getNxProjectName
