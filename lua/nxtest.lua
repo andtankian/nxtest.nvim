@@ -1,49 +1,69 @@
 local utils = require("utils")
 
 local cmd = vim.cmd
-local usercmd = vim.api.nvim_create_user_command
+local user_cmd = vim.api.nvim_create_user_command
 
-local function runCmd(command)
-	cmd("vsplit | terminal cd " .. vim.loop.cwd() .. " && pnpm nx run " .. command)
+local function run_cmd(command_table)
+  local command = table.concat(command_table, "")
+  cmd("vsplit | terminal cd " .. vim.loop.cwd() .. "&& pnpm nx run " .. command)
 end
 
-local function runTestForProject()
-	local projectName = utils.getNxProjectName()
-	local command = projectName .. ":test" .. " --watch"
-	runCmd(command)
+local function run_test_for_project()
+  local project_name = utils.get_nx_project_name()
+  local command = project_name .. ":test" .. " --watch"
+  run_cmd(command)
 end
 
-local function runTestForFile()
-	local projectName = utils.getNxProjectName()
-	local command = projectName .. ":test --runTestsByPath " .. '"' .. utils.getFilePath() .. '"' .. " --watch"
-	runCmd(command)
+local function run_test_for_file(opts)
+  local command_table = {}
+
+  local project_name = utils.get_nx_project_name()
+
+  table.insert(command_table, project_name)
+  table.insert(command_table, ":test")
+  table.insert(command_table, " --skip-nx-cache")
+  table.insert(command_table, " --runTestsByPath ")
+  table.insert(command_table, utils.get_file_path())
+  table.insert(command_table, " --watch")
+  if opts ~= nil then
+    table.insert(command_table, " " .. opts.args)
+  end
+
+  run_cmd(command_table)
 end
 
-local function runTestForSingle()
-	local projectName = utils.getNxProjectName()
+local function run_test_for_single()
+  local command_table = {}
 
-	local line = vim.api.nvim_get_current_line()
-	local _, _, testName = string.find(line, "^%s*%a+%(['\"](.+)['\"]")
+  local project_name = utils.get_nx_project_name()
 
-	if testName ~= nil then
-		local command = projectName
-			.. ":test --runTestsByPath "
-			.. '"'
-			.. utils.getFilePath()
-			.. '"'
-			.. ' --testNamePattern=\'"'
-			.. testName
-			.. '"\' --watch'
-		runCmd(command)
-	end
+  local line = vim.api.nvim_get_current_line()
+  local _, _, test_name = string.find(line, "^%s*%a+%(['\"](.+)['\"]")
+
+  if test_name ~= nil then
+    table.insert(command_table, project_name)
+    table.insert(command_table, ":test")
+    table.insert(command_table, " --skip-nx-cache")
+    table.insert(command_table, " --runTestsByPath ")
+    table.insert(command_table, utils.get_file_path())
+    table.insert(command_table, " --testNamePattern='\"")
+    table.insert(command_table, test_name)
+    table.insert(command_table, "$\"'")
+    table.insert(command_table, " --watch")
+    if opts ~= nil then
+      table.insert(command_table, " " .. opts.args)
+    end
+
+    run_cmd(command_table)
+  end
 end
 
 local M = {}
 
 M.setup = function()
-	usercmd("NxTest", runTestForProject, { nargs = 0 })
-	usercmd("NxTestFile", runTestForFile, { nargs = 0 })
-	usercmd("NxTestSingle", runTestForSingle, { nargs = 0 })
+  user_cmd("NxTest", run_test_for_project, { nargs = 0 })
+  user_cmd("NxTestFile", run_test_for_file, { nargs = "*" })
+  user_cmd("NxTestSingle", run_test_for_single, { nargs = 0 })
 end
 
 return M
