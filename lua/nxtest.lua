@@ -30,9 +30,9 @@ local function run_test_for_file(opts)
 
 	table.insert(command_table, project_name)
 	table.insert(command_table, ":test")
-	table.insert(command_table, " --runTestsByPath ")
+	table.insert(command_table, ' --runTestsByPath "')
 	table.insert(command_table, utils.get_file_path())
-	table.insert(command_table, " --watch")
+	table.insert(command_table, '" --watch')
 
 	run_cmd(command_table, opts)
 end
@@ -52,7 +52,7 @@ local function run_test_for_single(opts)
 		table.insert(command_table, utils.get_file_path())
 		table.insert(command_table, '" --testNamePattern=\'"')
 		table.insert(command_table, test_name)
-		table.insert(command_table, "\"$'")
+		table.insert(command_table, "\"'")
 		table.insert(command_table, " --watch")
 
 		run_cmd(command_table, opts)
