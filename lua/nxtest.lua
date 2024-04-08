@@ -9,7 +9,15 @@ local function run_cmd(command_table, opts)
 	end
 
 	local command = table.concat(command_table, "")
-	cmd("vsplit | terminal cd " .. vim.loop.cwd() .. "&& pnpm nx run " .. command)
+	cmd("vsplit | terminal cd " .. vim.loop.cwd() .. " && pnpm nx " .. command)
+end
+
+local function run_test_for_all_projects(opts)
+	local command_table = {}
+
+	table.insert(command_table, " run-many -t test")
+
+	run_cmd(command_table, opts)
 end
 
 local function run_test_for_project(opts)
@@ -17,6 +25,7 @@ local function run_test_for_project(opts)
 
 	local project_name = utils.get_nx_project_name()
 
+	table.insert(command_table, " run ")
 	table.insert(command_table, project_name)
 	table.insert(command_table, ":test")
 
@@ -28,6 +37,7 @@ local function run_test_for_file(opts)
 
 	local project_name = utils.get_nx_project_name()
 
+	table.insert(command_table, " run ")
 	table.insert(command_table, project_name)
 	table.insert(command_table, ":test")
 	table.insert(command_table, ' --runTestsByPath "')
@@ -46,6 +56,7 @@ local function run_test_for_single(opts)
 	local _, _, test_name = string.find(line, "^%s*%a+%(['\"](.+)['\"]")
 
 	if test_name ~= nil then
+		table.insert(command_table, " run ")
 		table.insert(command_table, project_name)
 		table.insert(command_table, ":test")
 		table.insert(command_table, ' --runTestsByPath "')
@@ -62,6 +73,7 @@ end
 local M = {}
 
 M.setup = function()
+	user_cmd("NxTestAll", run_test_for_all_projects, { nargs = "*" })
 	user_cmd("NxTest", run_test_for_project, { nargs = "*" })
 	user_cmd("NxTestFile", run_test_for_file, { nargs = "*" })
 	user_cmd("NxTestSingle", run_test_for_single, { nargs = "*" })
