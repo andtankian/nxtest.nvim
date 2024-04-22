@@ -1,4 +1,4 @@
-local utils = require("utils")
+local helpers = require("helpers")
 
 local cmd = vim.cmd
 local user_cmd = vim.api.nvim_create_user_command
@@ -23,7 +23,7 @@ end
 local function run_test_for_project(opts)
 	local command_table = {}
 
-	local project_name = utils.get_nx_project_name()
+	local project_name = helpers.get_nx_project_name()
 
 	table.insert(command_table, " run ")
 	table.insert(command_table, project_name)
@@ -35,13 +35,18 @@ end
 local function run_test_for_file(opts)
 	local command_table = {}
 
-	local project_name = utils.get_nx_project_name()
+  print(helpers)
+
+	local project_name = helpers.get_nx_project_name()
+
+  print(project_name)
+
 
 	table.insert(command_table, " run ")
 	table.insert(command_table, project_name)
 	table.insert(command_table, ":test")
 	table.insert(command_table, ' --testPathPattern="')
-	table.insert(command_table, utils.get_file_path())
+	table.insert(command_table, helpers.get_file_path())
 	table.insert(command_table, '" --watch')
 
 	run_cmd(command_table, opts)
@@ -50,7 +55,7 @@ end
 local function run_test_for_single(opts)
 	local command_table = {}
 
-	local project_name = utils.get_nx_project_name()
+	local project_name = helpers.get_nx_project_name()
 
 	local line = vim.api.nvim_get_current_line()
 	local _, _, test_name = string.find(line, "^%s*%a+%(['\"](.+)['\"]")
@@ -60,7 +65,7 @@ local function run_test_for_single(opts)
 		table.insert(command_table, project_name)
 		table.insert(command_table, ":test")
 		table.insert(command_table, ' --testPathPattern "')
-		table.insert(command_table, utils.get_file_path())
+		table.insert(command_table, helpers.get_file_path())
 		table.insert(command_table, '" --testNamePattern=\'"')
 		table.insert(command_table, test_name)
 		table.insert(command_table, "\"'")

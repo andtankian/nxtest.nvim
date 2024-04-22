@@ -1,7 +1,5 @@
 local scan = require("plenary.scandir")
 
-local M = {}
-
 --[[
 
 Checks if a given input string contains a specific search string.
@@ -92,7 +90,7 @@ local function get_nx_project_name()
   return project_json.name
 end
 
-M.get_nx_project_name = get_nx_project_name
-M.get_file_path = get_file_path
-
-return M
+return {
+  get_file_path = get_file_path,
+  get_nx_project_name = get_nx_project_name
+}
