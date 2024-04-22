@@ -35,12 +35,7 @@ end
 local function run_test_for_file(opts)
 	local command_table = {}
 
-  print(helpers)
-
 	local project_name = helpers.get_nx_project_name()
-
-  print(project_name)
-
 
 	table.insert(command_table, " run ")
 	table.insert(command_table, project_name)
