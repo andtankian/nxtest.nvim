@@ -1,6 +1,3 @@
-This plugin executes tests in a Neovim terminal buffer using NX `test` target.
-
-
 # NxTest.nvim
 
 A Neovim plugin for running and debugging tests (jest only) in Nx monorepos.
@@ -30,13 +27,11 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
-    "andrewribeiro/nxtest.nvim",
-    dependencies = {
-        "nvim-lua/plenary.nvim",
-    },
-    config = function()
-        require("nxtest").setup()
-    end,
+  "andtankian/nxtest.nvim",
+  dependencies = {
+    "nvim-lua/plenary.nvim",
+  },
+  opts = {},
 }
 ```
 
