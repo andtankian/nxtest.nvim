@@ -1,17 +1,26 @@
+---@type table
 local helpers = require("helpers")
 
 local cmd = vim.cmd
 local user_cmd = vim.api.nvim_create_user_command
 
-local function run_cmd(command_table, opts)
+---@class CommandOpts
+---@field args string
+
+---@param command_table string[]
+---@param opts CommandOpts|nil
+---@param debug boolean|nil
+local function run_cmd(command_table, opts, debug)
 	if opts ~= nil then
 		table.insert(command_table, " " .. opts.args)
 	end
 
 	local command = table.concat(command_table, "")
-	cmd("vsplit | terminal cd " .. vim.loop.cwd() .. " && pnpm nx " .. command)
+	local node_options = debug and "NODE_OPTIONS=--inspect-wait" or ""
+	cmd("vsplit | terminal cd " .. vim.loop.cwd() .. " && " .. node_options .. " pnpm nx " .. command)
 end
 
+---@param opts CommandOpts|nil
 local function run_test_for_all_projects(opts)
 	local command_table = {}
 
@@ -20,6 +29,7 @@ local function run_test_for_all_projects(opts)
 	run_cmd(command_table, opts)
 end
 
+---@param opts CommandOpts|nil
 local function run_test_for_project(opts)
 	local command_table = {}
 
@@ -32,6 +42,7 @@ local function run_test_for_project(opts)
 	run_cmd(command_table, opts)
 end
 
+---@param opts CommandOpts|nil
 local function run_test_for_file(opts)
 	local command_table = {}
 
@@ -47,26 +58,24 @@ local function run_test_for_file(opts)
 	run_cmd(command_table, opts)
 end
 
-local function run_test_for_single(opts)
-	local command_table = {}
-
+---@param command_table string[]
+---@return boolean
+local function build_single_test_command(command_table)
 	local project_name = helpers.get_nx_project_name()
-
-	local line_number = vim.api.nvim_win_get_cursor(0)[1] -- current line number
+	local line_number = vim.api.nvim_win_get_cursor(0)[1]
 	local lines = vim.api.nvim_buf_get_lines(0, 0, line_number, false)
 
-	-- Initialize variables to hold the test name and describe context
+	---@type string|nil
 	local test_name = nil
+	---@type string|nil
 	local describe_context = nil
 
-	-- Extract test name from the current line
 	local current_line = lines[#lines]
 	local _, _, found_test_name = string.find(current_line, "^%s*%a+%(['\"](.+)['\"]")
 	if found_test_name then
 		test_name = found_test_name
 	end
 
-	-- Traverse upward to find the nearest 'describe' block
 	for i = #lines - 1, 1, -1 do
 		_, _, describe_context = string.find(lines[i], "^%s*describe%s*%(['\"](.+)['\"]")
 		if describe_context then
@@ -82,24 +91,39 @@ local function run_test_for_single(opts)
 		table.insert(command_table, helpers.get_file_path())
 		table.insert(command_table, '"')
 
-		-- Add both the describe context and the test name to the testNamePattern
 		if describe_context ~= nil then
 			table.insert(command_table, " --testNamePattern='\"")
 			table.insert(command_table, describe_context .. " " .. test_name)
 			table.insert(command_table, "\"'")
 		else
-			-- Fallback to just test name if no describe context found
 			table.insert(command_table, " --testNamePattern='\"")
 			table.insert(command_table, test_name)
 			table.insert(command_table, "\"'")
 		end
 
 		table.insert(command_table, " --watch")
+		return true
+	end
+	return false
+end
 
-		run_cmd(command_table, opts)
+---@param opts CommandOpts|nil
+local function run_test_for_single(opts)
+	local command_table = {}
+	if build_single_test_command(command_table) then
+		run_cmd(command_table, opts, false)
 	end
 end
 
+---@param opts CommandOpts|nil
+local function debug_test_for_single(opts)
+	local command_table = {}
+	if build_single_test_command(command_table) then
+		run_cmd(command_table, opts, true)
+	end
+end
+
+---@param opts CommandOpts|nil
 local function run_tests_for_affected_projects(opts)
 	local command_table = {}
 
@@ -108,6 +132,8 @@ local function run_tests_for_affected_projects(opts)
 	run_cmd(command_table, opts)
 end
 
+---@class NxTest
+---@field setup fun()
 local M = {}
 
 M.setup = function()
@@ -116,6 +142,7 @@ M.setup = function()
 	user_cmd("NxTestAll", run_test_for_all_projects, { nargs = "*" })
 	user_cmd("NxTestFile", run_test_for_file, { nargs = "*" })
 	user_cmd("NxTestSingle", run_test_for_single, { nargs = "*" })
+	user_cmd("NxTestDebugSingle", debug_test_for_single, { nargs = "*" })
 end
 
 return M
