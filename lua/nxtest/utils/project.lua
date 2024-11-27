@@ -1,5 +1,8 @@
 ---@type table
 local scan = require("plenary.scandir")
+local utils = require("nxtest.utils")
+
+local M = {}
 
 ---@param input_string string The input string to search within
 ---@param search string The string to search for within the input string
@@ -12,11 +15,6 @@ end
 ---@return string path The path without the last component
 local function get_path_without_last_component(path)
 	return path:match("^(.*)/[^/]*$")
-end
-
----@return string file_path The full path of the current buffer
-local function get_file_path()
-	return vim.fn.expand("%:p")
 end
 
 ---@param path string The directory path to start the search from
@@ -38,8 +36,8 @@ end
 ---@field name string The name of the Nx project
 
 ---@return string? project_name The name of the Nx project
-local function get_nx_project_name()
-	local file_path = get_file_path()
+function M.get_nx_project_name()
+	local file_path = utils.get_file_path()
 	local project_json_path = get_project_json_path(get_path_without_last_component(file_path))
 
 	local project_json_content
@@ -60,12 +58,5 @@ local function get_nx_project_name()
 	return project_json.name
 end
 
----@class Helpers
----@field get_file_path fun(): string
----@field get_nx_project_name fun(): string?
-local Helpers = {
-	get_file_path = get_file_path,
-	get_nx_project_name = get_nx_project_name,
-}
+return M
 
-return Helpers
