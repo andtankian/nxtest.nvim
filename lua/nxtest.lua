@@ -4,8 +4,17 @@ local helpers = require("helpers")
 local cmd = vim.cmd
 local user_cmd = vim.api.nvim_create_user_command
 
+-- In nxtest.lua at the top after requires
+---@class Config
+---@field terminal_position "vertical"|"horizontal"|"buffer"
+local default_config = {
+	terminal_position = "buffer",
+}
+
+local config = default_config
+
 ---@class CommandOpts
----@field args string
+---@field args string Arguments passed to the command
 
 ---@param command_table string[]
 ---@param opts CommandOpts|nil
@@ -17,7 +26,15 @@ local function run_cmd(command_table, opts, debug)
 
 	local command = table.concat(command_table, "")
 	local node_options = debug and "NODE_OPTIONS=--inspect-wait" or ""
-	cmd("vsplit | terminal cd " .. vim.loop.cwd() .. " && " .. node_options .. " pnpm nx " .. command)
+	local terminal_cmd = "terminal cd " .. vim.fn.getcwd() .. " && " .. node_options .. " pnpm nx " .. command
+
+	if config.terminal_position == "vertical" then
+		cmd("vsplit | " .. terminal_cmd)
+	elseif config.terminal_position == "horizontal" then
+		cmd("split | " .. terminal_cmd)
+	elseif config.terminal_position == "buffer" then
+		cmd("enew | " .. terminal_cmd)
+	end
 end
 
 ---@param opts CommandOpts|nil
@@ -133,10 +150,15 @@ local function run_tests_for_affected_projects(opts)
 end
 
 ---@class NxTest
----@field setup fun()
+---@field setup fun(opts?: Config)
 local M = {}
 
-M.setup = function()
+---@param opts? Config
+M.setup = function(opts)
+	if opts then
+		config = vim.tbl_deep_extend("force", default_config, opts)
+	end
+
 	user_cmd("NxTest", run_test_for_project, { nargs = "*" })
 	user_cmd("NxTestAffected", run_tests_for_affected_projects, { nargs = "*" })
 	user_cmd("NxTestAll", run_test_for_all_projects, { nargs = "*" })
