@@ -64,19 +64,39 @@ local function build_single_test_command(command_table)
 	local describe_context = nil
 
 	local current_line = lines[#lines]
-	local _, _, found_test_name = string.find(current_line, "^%s*%a+%(['\"](.+)['\"]")
-	if found_test_name then
-		test_name = found_test_name
+
+	-- Define patterns for test keywords
+	local it_pattern = "^%s*it%s*%(['\"](.+)['\"]"
+	local test_pattern = "^%s*test%s*%(['\"](.+)['\"]"
+	local describe_pattern = "^%s*describe%s*%(['\"](.+)['\"]"
+
+	-- Check if current line matches any pattern
+	local _, _, it_match = string.find(current_line, it_pattern)
+	local _, _, test_match = string.find(current_line, test_pattern)
+	local _, _, describe_match = string.find(current_line, describe_pattern)
+
+	-- Set test name if we're on an it/test line
+	if it_match then
+		test_name = it_match
+	elseif test_match then
+		test_name = test_match
+	elseif describe_match then
+		describe_context = describe_match
 	end
 
-	for i = #lines - 1, 1, -1 do
-		_, _, describe_context = string.find(lines[i], "^%s*describe%s*%(['\"](.+)['\"]")
-		if describe_context then
-			break
+	-- If we're not on a describe line but on a test line, look for parent describe
+	if not describe_match and (it_match or test_match) then
+		for i = #lines - 1, 1, -1 do
+			local _, _, found_describe = string.find(lines[i], describe_pattern)
+			if found_describe then
+				describe_context = found_describe
+				break
+			end
 		end
 	end
 
-	if test_name ~= nil then
+	-- Build command if we have a test or describe to run
+	if test_name ~= nil or describe_match then
 		table.insert(command_table, " run ")
 		table.insert(command_table, project_name)
 		table.insert(command_table, ":test")
@@ -84,11 +104,18 @@ local function build_single_test_command(command_table)
 		table.insert(command_table, utils.get_file_path())
 		table.insert(command_table, '"')
 
-		if describe_context ~= nil then
+		if describe_match then
+			-- Run all tests in this describe block
+			table.insert(command_table, " --testNamePattern='\"")
+			table.insert(command_table, describe_context)
+			table.insert(command_table, "\"'")
+		elseif describe_context ~= nil then
+			-- Run specific test with describe context
 			table.insert(command_table, " --testNamePattern='\"")
 			table.insert(command_table, describe_context .. " " .. test_name)
 			table.insert(command_table, "\"'")
 		else
+			-- Run specific test without describe context
 			table.insert(command_table, " --testNamePattern='\"")
 			table.insert(command_table, test_name)
 			table.insert(command_table, "\"'")
@@ -124,4 +151,3 @@ function M.run_tests_for_affected_projects(opts)
 end
 
 return M
-

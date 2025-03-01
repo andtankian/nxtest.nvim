@@ -2,7 +2,7 @@
 ---@field terminal_position "vertical"|"horizontal"|"buffer"
 local M = {
 	default_config = {
-		terminal_position = "buffer",
+		terminal_position = "vertical",
 	},
 	config = {},
 }
